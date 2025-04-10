@@ -20,7 +20,7 @@ def amp_pha_stft(audio, n_fft, hop_size, win_size, center=True):
 
 
 def amp_pha_istft(log_amp, pha, n_fft, hop_size, win_size, center=True):
-    
+
     amp = torch.exp(log_amp)
     com = torch.complex(amp*torch.cos(pha), amp*torch.sin(pha))
     hann_window = torch.hann_window(win_size).to(com.device)

@@ -1,7 +1,5 @@
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-import sys
-sys.path.append("..")
 import itertools
 import os
 import time
@@ -15,11 +13,11 @@ from torch.utils.data import DistributedSampler, DataLoader
 import torch.multiprocessing as mp
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
-from env import AttrDict, build_env
-from datasets.dataset import Dataset, amp_pha_stft, amp_pha_istft, get_dataset_filelist
-from models.model import APNet_BWE_Model,  MultiPeriodDiscriminator, MultiResolutionAmplitudeDiscriminator, MultiResolutionPhaseDiscriminator, \
+from ap_bwe.env import AttrDict, build_env
+from ap_bwe.datasets.dataset import Dataset, amp_pha_stft, amp_pha_istft, get_dataset_filelist
+from ap_bwe.models.model import APNet_BWE_Model,  MultiPeriodDiscriminator, MultiResolutionAmplitudeDiscriminator, MultiResolutionPhaseDiscriminator, \
      feature_loss, generator_loss, discriminator_loss, phase_losses, cal_snr, cal_lsd
-from utils import plot_spectrogram, scan_checkpoint, load_checkpoint, save_checkpoint
+from ap_bwe.utils import plot_spectrogram, scan_checkpoint, load_checkpoint, save_checkpoint
 
 torch.backends.cudnn.benchmark = True
 
@@ -298,14 +296,14 @@ def train(rank, a, h):
             print('Time taken for epoch {} is {} sec\n'.format(epoch + 1, int(time.time() - start)))
 
 
-def main():
+def main(args=None):
     print('Initializing Training Process..')
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--group_name', default=None)
-    parser.add_argument('--input_training_wavs_dir', default='VCTK-Corpus-0.92/wav48/train')
-    parser.add_argument('--input_validation_wavs_dir', default='VCTK-Corpus-0.92/wav48/test')
+    parser.add_argument('--input_training_wavs_dir', default='VCTK-Corpus-0.92/wav16/train')
+    parser.add_argument('--input_validation_wavs_dir', default='VCTK-Corpus-0.92/wav16/test')
     parser.add_argument('--input_training_file', default='VCTK-Corpus-0.92/training.txt')
     parser.add_argument('--input_validation_file', default='VCTK-Corpus-0.92/test.txt')
     parser.add_argument('--checkpoint_path', default='cp_model')
@@ -316,7 +314,7 @@ def main():
     parser.add_argument('--summary_interval', default=100, type=int)
     parser.add_argument('--validation_interval', default=5000, type=int)
 
-    a = parser.parse_args()
+    a = parser.parse_args(args)
 
     with open(a.config) as f:
         data = f.read()

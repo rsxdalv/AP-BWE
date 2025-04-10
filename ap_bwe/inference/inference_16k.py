@@ -1,19 +1,19 @@
+"""Inference script for 16kHz audio bandwidth extension."""
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
-sys.path.append("..")
 import glob
 import os
 import argparse
 import json
-from re import S
 import torch
+import time
 import numpy as np
 import torchaudio
-import time
 import torchaudio.functional as aF
-from env import AttrDict
-from datasets.dataset import amp_pha_stft, amp_pha_istft
-from models.model import APNet_BWE_Model
+from ap_bwe.env import AttrDict
+from ap_bwe.datasets.dataset import amp_pha_stft, amp_pha_istft
+from ap_bwe.models.model import APNet_BWE_Model
 import soundfile as sf
 import matplotlib.pyplot as plt
 from rich.progress import track
@@ -52,11 +52,13 @@ def inference(a):
             # print(index)
             audio, orig_sampling_rate = torchaudio.load(os.path.join(a.input_wavs_dir, index))
             audio = audio.to(device)
-            
+
             audio_hr = aF.resample(audio, orig_freq=orig_sampling_rate, new_freq=h.hr_sampling_rate)
             audio_lr = aF.resample(audio, orig_freq=orig_sampling_rate, new_freq=h.lr_sampling_rate)
             audio_lr = aF.resample(audio_lr, orig_freq=h.lr_sampling_rate, new_freq=h.hr_sampling_rate)
             audio_lr = audio_lr[:, : audio_hr.size(1)]
+
+            amp_wb, pha_wb, com_wb = amp_pha_stft(audio_hr, h.n_fft, h.hop_size, h.win_size)
 
             pred_start = time.time()
             amp_nb, pha_nb, com_nb = amp_pha_stft(audio_lr, h.n_fft, h.hop_size, h.win_size)
@@ -69,17 +71,18 @@ def inference(a):
             output_file = os.path.join(a.output_dir, index)
 
             sf.write(output_file, audio_hr_g.squeeze().cpu().numpy(), h.hr_sampling_rate, 'PCM_16')
-
+    
     print(duration_tot)
 
-def main():
+
+def main(args=None):
     print('Initializing Inference Process..')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_wavs_dir', default='VCTK-Corpus-0.92/wav48/test')
+    parser.add_argument('--input_wavs_dir', default='VCTK-Corpus-0.92/wav16/test')
     parser.add_argument('--output_dir', default='../generated_files')
     parser.add_argument('--checkpoint_file', required=True)
-    a = parser.parse_args()
+    a = parser.parse_args(args)
 
     config_file = os.path.join(os.path.split(a.checkpoint_file)[0], 'config.json')
     with open(config_file) as f:
@@ -102,4 +105,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
