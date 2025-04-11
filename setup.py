@@ -25,6 +25,9 @@ setuptools.setup(
     url="https://github.com/yxlu-0102/AP-BWE",
     packages=setuptools.find_packages(),
     include_package_data=True,
+    package_data={
+        'ap_bwe': ['*.py', '**/*.py', 'configs/*.json'],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
